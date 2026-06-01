@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ALUMIBRO 產品開發預算</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-logo">
+    <span class="logo-text">ALUMIBRO</span>
+    <span class="logo-sub">鋁材兄弟</span>
+  </div>
+  <div class="nav-title">產品開發預算工具</div>
+  <div class="nav-actions">
+    <button class="nav-btn" onclick="showView('list')">
+      <i class="fas fa-list"></i> <span>預算清單</span>
+    </button>
+    <button class="nav-btn accent" onclick="newBudget()">
+      <i class="fas fa-plus"></i> <span>新建預算</span>
+    </button>
+  </div>
+</nav>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- LIST VIEW -->
+<div id="view-list" class="view">
+  <div class="page-header">
+    <h2><i class="fas fa-folder-open"></i> 預算清單</h2>
+    <span id="list-count" class="badge">讀取中...</span>
+  </div>
+  <div id="budget-list-container">
+    <div class="loading"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
+  </div>
+</div>
+
+<!-- EDITOR VIEW -->
+<div id="view-editor" class="view hidden">
+  <div class="card">
+    <div class="card-header">
+      <i class="fas fa-clipboard-list"></i> 專案基本資訊
+      <span id="budget-id-badge" class="id-badge"></span>
+    </div>
+    <div class="form-grid">
+      <div class="field-group">
+        <label>專案名稱 <span class="req">*</span></label>
+        <input type="text" id="proj-name" placeholder="例：鋁製輕量餐車 V1">
+      </div>
+      <div class="field-group">
+        <label>產品類型</label>
+        <select id="proj-type">
+          <option>餐車/攤車</option>
+          <option>板凳/座椅</option>
+          <option>展示架</option>
+          <option>收納架</option>
+          <option>戶外家具</option>
+          <option>客製化結構件</option>
+          <option>其他</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>負責人</label>
+        <input type="text" id="proj-owner" placeholder="姓名">
+      </div>
+      <div class="field-group">
+        <label>預計完成日</label>
+        <input type="date" id="proj-date">
+      </div>
+      <div class="field-group full">
+        <label>專案說明</label>
+        <textarea id="proj-desc" rows="2" placeholder="產品用途、規格概述、市場目標..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <i class="fas fa-calculator"></i> 開發費用明細
+      <div class="card-header-actions">
+        <button class="btn-xs" onclick="addRowDefault()"><i class="fas fa-plus"></i> <span>新增項目</span></button>
+        <button class="btn-xs outline" onclick="addRowFromTemplate()"><i class="fas fa-magic"></i> <span>快速範本</span></button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table id="budget-table">
+        <thead>
+          <tr>
+            <th style="width:32px">#</th>
+            <th>項目名稱</th>
+            <th style="width:80px">類別</th>
+            <th style="width:70px">數量</th>
+            <th style="width:65px">單位</th>
+            <th style="width:110px">單價 (NT$)</th>
+            <th style="width:100px">小計</th>
+            <th style="width:110px">備註</th>
+            <th style="width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="budget-body"></tbody>
+      </table>
+    </div>
+    <div class="bar-wrap">
+      <div class="budget-bar" id="budget-bar"></div>
+      <div id="category-legend" class="legend-row"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="fas fa-coins"></i> 預算匯總</div>
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="s-label">未稅小計</div>
+        <div class="s-value" id="sum-subtotal">NT$0</div>
+      </div>
+      <div class="sum-card">
+        <div class="s-label">稅金（5%）</div>
+        <div class="s-value" id="sum-tax">NT$0</div>
+      </div>
+      <div class="sum-card highlight">
+        <div class="s-label">含稅總計</div>
+        <div class="s-value" id="sum-total">NT$0</div>
+      </div>
+    </div>
+    <div class="buffer-row">
+      <label>預算緩衝</label>
+      <input type="number" id="buffer-pct" value="10" min="0" max="100" step="1" oninput="recalc()"> %
+      <span class="buffer-result">含緩衝總預算：<strong id="sum-buffer">NT$0</strong></span>
+    </div>
+  </div>
+
+  <div class="action-bar">
+    <button class="btn primary" onclick="saveBudget()"><i class="fas fa-save"></i> 儲存至 Google Sheets</button>
+    <button class="btn accent" onclick="exportToSheet()"><i class="fas fa-table"></i> 展開至獨立 Sheet</button>
+    <button class="btn outline" onclick="exportCSV()"><i class="fas fa-file-csv"></i> 匯出 CSV</button>
+    <button class="btn ghost" onclick="showView('list')"><i class="fas fa-arrow-left"></i> 返回清單</button>
+  </div>
+</div>
+
+<!-- TEMPLATE MODAL -->
+<div id="template-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <h3><i class="fas fa-magic"></i> 快速範本</h3>
+      <button onclick="closeModal('template-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:#666;font-size:13px;margin-bottom:12px">選擇要套用的範本項目</p>
+      <div id="template-list" class="template-grid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn primary" onclick="applyTemplate()">套用選取</button>
+      <button class="btn ghost" onclick="closeModal('template-modal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
