@@ -1,164 +1,1662 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ALUMIBRO 產品開發預算</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALUMIBRO 鋁材兄弟 - 訂購系統</title>
+    <link rel="stylesheet" href="style.css?v=20260512_V40">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- SheetJS for Excel Import (BOM Upload) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        /* 新增：長條鋁材背景樣式 */
+        .geo-long {
+            position: absolute;
+            color: #d1d5db;
+            pointer-events: none !important;
+            z-index: -1;
+            opacity: 0.4;
+            filter: blur(1px);
+        }
+        .geo-long-1 { top: 15%; left: -10%; width: 120%; animation: floatSide 20s infinite linear; }
+        .geo-long-2 { top: 45%; right: -20%; width: 100%; animation: floatSide 25s infinite linear reverse; }
+        .geo-long-3 { bottom: 20%; left: -30%; width: 150%; animation: floatSide 30s infinite linear; opacity: 0.2; }
+
+        @keyframes floatSide {
+            0% { transform: translateX(-5%); }
+            50% { transform: translateX(5%); }
+            100% { transform: translateX(-5%); }
+        }
+
+        /* 讓原本的圓形裝飾稍微退後 */
+        .hub-bg-circle { opacity: 0.3; }
+
+        /* 全域圓角優化：讓介面更現代、不生硬 */
+        .aluminum-card, .acc-card, .b2b-product-card, .b2b-product-detail-card, .hub-card {
+            border-radius: 20px !important;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05) !important;
+        }
+
+        /* 圖片圓角 */
+        .card-img, .material-img, .scene-img, .collage-img, .cart-item-img, .aluminum-img-wrapper img {
+            border-radius: 12px !important;
+        }
+
+        /* 按鈕與輸入框圓角 */
+        .btn-add, .btn-submit, .btn-query, .inquiry-main-btn, .nav-item, .b2b-tab-btn, .detail-input, input, select, textarea {
+            border-radius: 12px !important;
+        }
+
+        /* 修正卡片內部的圖片容器 */
+        .aluminum-img-wrapper {
+            border-radius: 12px;
+            margin: 10px;
+            overflow: hidden;
+        }
+        .hub-divider-line {
+            margin: 4px 0 12px;
+            background: rgba(255, 255, 255, 0.4); 
+        }
+
+        /* 工業幾何線框背景 */
+        .hub-iso-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .hub-iso-frame {
+            position: absolute;
+            stroke: #2c3e50;
+            stroke-width: 0.8;
+            fill: none;
+            opacity: 0.1;
+        }
+        .frame-1 { top: 10%; left: 5%; width: 300px; animation: isoFloat 20s infinite ease-in-out; }
+        .frame-2 { top: 55%; right: 5%; width: 350px; animation: isoFloat 25s infinite ease-in-out reverse; }
+        .frame-3 { top: 30%; left: 45%; width: 200px; opacity: 0.05; }
+
+        @keyframes isoFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-15px) rotate(0.5deg); }
+        }
+
+        /* === B2C 動態色系統一 (完全對齊頂部選單的極淡莫蘭迪色) === */
+        body[data-theme="20"] { --theme-main: #b3c7d9; --theme-sub: #f0f4f8; --theme-text: #444; }
+        body[data-theme="30"] { --theme-main: #e6d9c6; --theme-sub: #f8f4f0; --theme-text: #444; }
+        body[data-theme="40"] { --theme-main: #b8ccb8; --theme-sub: #f0f8f0; --theme-text: #444; }
+
+        /* 同步按鈕、標籤與外框顏色 (終極覆蓋 - 使用高權重選擇器) */
+        html body[data-theme] #aluminum-input-area button.btn-add.btn-add.btn-add,
+        body[data-theme] .tag-2d.tag-2d, 
+        body[data-theme] .tag-3d.tag-3d {
+            background: var(--theme-main) !important;
+            background-color: var(--theme-main) !important;
+            background-image: none !important;
+            color: var(--theme-text) !important;
+            border: 1px solid rgba(0,0,0,0.05) !important;
+            font-weight: 500 !important;
+        }
+        
+        body[data-theme] .qty-btn,
+        body[data-theme] .acc-card button {
+            background-color: var(--theme-sub) !important;
+            color: #333 !important;
+            border: 1px solid var(--theme-main) !important;
+        }
+        
+        body[data-theme] .qty-btn:hover,
+        body[data-theme] .acc-card button:hover {
+            background-color: var(--theme-main) !important;
+            color: var(--theme-text) !important;
+        }
+
+        body[data-theme] .aluminum-card.selected {
+            border: 2px solid var(--theme-main) !important;
+            box-shadow: 0 0 12px var(--theme-sub) !important;
+        }
+
+        /* PRO 標籤移除底色 (僅限 B2B 導覽列，不影響 Hub 卡片) */
+        .b2b-dashboard .pro-tag {
+            background: none !important;
+            background-color: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        /* === B2C 鋁材卡片圓角 + 立體感 === */
+        .profile-card {
+            border-radius: 16px !important;
+            overflow: hidden !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+            border: 1px solid rgba(0,0,0,0.06) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .profile-card:hover {
+            transform: translateY(-4px) !important;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.12) !important;
+        }
+        .profile-card .profile-img {
+            border-radius: 12px 12px 0 0 !important;
+            overflow: hidden !important;
+        }
+        .profile-card.selected {
+            border: 2px solid var(--theme-main, #b3c7d9) !important;
+            box-shadow: 0 0 0 4px rgba(179,199,217,0.25) !important;
+        }
+
+        /* 配件卡片也一起圓角 */
+        .acc-card {
+            border-radius: 16px !important;
+            overflow: hidden !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+            border: 1px solid rgba(0,0,0,0.06) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .acc-card:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.11) !important;
+        }
+        /* 配件圖片圓角 */
+        .acc-img-wrapper {
+            border-radius: 12px !important;
+            overflow: hidden !important;
+        }
+        .acc-img {
+            border-radius: 10px !important;
+        }
+
+        /* === B2B 商品列 - 立體卡片效果 === */
+        .b2b-product-row {
+            background: #fff;
+            border-radius: 14px !important;
+            margin: 6px 10px !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04) !important;
+            border: 1px solid rgba(0,0,0,0.05) !important;
+            border-left: 4px solid #ccc !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+            animation: b2bSlideIn 0.3s ease both;
+            overflow: hidden !important;
+        }
+        .b2b-product-row:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06) !important;
+        }
+        .b2b-product-row.b2b-series-20 { border-left-color: #b3c7d9 !important; }
+        .b2b-product-row.b2b-series-30 { border-left-color: #e6d9c6 !important; }
+        .b2b-product-row.b2b-series-40 { border-left-color: #b8ccb8 !important; }
+
+        .b2b-thumb {
+            box-shadow: 0 3px 10px rgba(0,0,0,0.12) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .b2b-product-row:hover .b2b-thumb {
+            transform: scale(1.06) !important;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.18) !important;
+        }
+        @keyframes b2bSlideIn {
+            from { opacity: 0; transform: translateX(-16px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        .b2b-product-row:nth-child(1) { animation-delay: 0.00s; }
+        .b2b-product-row:nth-child(2) { animation-delay: 0.05s; }
+        .b2b-product-row:nth-child(3) { animation-delay: 0.10s; }
+        .b2b-product-row:nth-child(4) { animation-delay: 0.15s; }
+        .b2b-product-row:nth-child(5) { animation-delay: 0.20s; }
+        .b2b-product-row:nth-child(6) { animation-delay: 0.25s; }
+        .b2b-product-row:nth-child(7) { animation-delay: 0.30s; }
+        .b2b-product-row:nth-child(8) { animation-delay: 0.35s; }
+
+        /* === 手機版字體微調 === */
+        @media (max-width: 768px) {
+            .series-desc-container {
+                font-size: 0.9rem !important;
+                line-height: 1.5 !important;
+            }
+            .section-title {
+                font-size: 0.95rem !important;
+                margin-bottom: 12px !important;
+            }
+            /* 壓縮輸入面板的上下間距 */
+            .input-panel {
+                padding: 12px !important;
+                margin-top: 10px !important;
+            }
+            .selected-info {
+                margin-bottom: 8px !important;
+                font-size: 0.9rem !important;
+            }
+            .input-group {
+                gap: 8px !important;
+                margin-top: 0 !important;
+            }
+            .input-group input {
+                padding: 8px 10px !important;
+                margin-bottom: 0 !important;
+            }
+            .btn-add {
+                padding: 10px !important;
+                margin-top: 4px !important;
+            }
+        }
+    </style>
+    <script>
+        // 自動監聽系列切換，並套用對應的色系主題
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('button, .nav-item, .b2b-tab-btn');
+            const hubCard = e.target.closest('.hub-card');
+
+            // 從 Hub 點擊進入 B2C 時，預設為 20 系列
+            if (hubCard && hubCard.classList.contains('personal')) {
+                document.body.setAttribute('data-theme', '20');
+            }
+
+            if (btn && (btn.innerText.includes('20系列') || btn.innerText.includes('20 系列'))) {
+                document.body.setAttribute('data-theme', '20');
+            } else if (btn && (btn.innerText.includes('30系列') || btn.innerText.includes('30 系列'))) {
+                document.body.setAttribute('data-theme', '30');
+            } else if (btn && (btn.innerText.includes('40系列') || btn.innerText.includes('40 系列'))) {
+                document.body.setAttribute('data-theme', '40');
+            }
+        });
+        
+        // 絕對強制覆蓋「加入清單」按鈕顏色的監視器 (不會影響其他功能)
+        // (已移除 MutationObserver 以避免無窮迴圈當機)
+
+        // 預設主題與啟動監視
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.setAttribute('data-theme', '20'); // 預設 20
+        });
+    </script>
 </head>
+
 <body>
+    <!-- 頂部橫幅輪播 -->
+    <div class="top-banner" id="topBanner" style="z-index: 9998;"> <!-- Lower z-index than Hub -->
+        <div class="banner-content">
+            <i class="banner-icon fas fa-crown"></i>
+            <span class="banner-text" id="bannerText">🏆 工業級鋁擠型專家 | 超過1000+專案實績</span>
+        </div>
 
-<nav class="top-nav">
-  <div class="nav-logo">
-    <span class="logo-text">ALUMIBRO</span>
-    <span class="logo-sub">鋁材兄弟</span>
-  </div>
-  <div class="nav-title">產品開發預算工具</div>
-  <div class="nav-actions">
-    <button class="nav-btn" onclick="showView('list')">
-      <i class="fas fa-list"></i> <span>預算清單</span>
+        <!-- 進度指示器 -->
+        <div class="banner-indicators" id="bannerIndicators">
+            <span class="indicator active" data-index="0"></span>
+            <span class="indicator" data-index="1"></span>
+            <span class="indicator" data-index="2"></span>
+        </div>
+
+        <button class="banner-close" onclick="closeBanner()" title="關閉橫幅">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <style>
+        /* === ALUMIBRO 首頁深色品牌主題 === */
+        .hub-overlay {
+            background: #4A5A6B !important;
+            overflow: hidden !important;
+        }
+        .hub-container {
+            min-height: 100vh !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 30px 20px !important;
+            gap: 24px !important;
+        }
+        .hub-card {
+            background: #ffffff !important;
+            border: none !important;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25) !important;
+            transition: all 0.3s ease !important;
+        }
+        .hub-card:hover {
+            background: #B8864B !important;
+            border: none !important;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.35) !important;
+            transform: translateY(-8px) !important;
+        }
+        .hub-card h3 { color: #2C3742 !important; text-shadow: none !important; transition: color 0.3s ease !important; }
+        .hub-card p { color: #666666 !important; text-shadow: none !important; transition: color 0.3s ease !important; }
+        .hub-card:hover h3,
+        .hub-card:hover p { color: #ffffff !important; }
+
+        .hub-card-series-tag { transition: all 0.3s ease !important; }
+        .hub-card:hover .hub-card-series-tag {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: #ffffff !important;
+        }
+
+        .hub-btn {
+            background: #FAFAF7 !important;
+            color: #2C3742 !important;
+            border: 1px solid #E0E0E0 !important;
+            transition: all 0.25s ease;
+        }
+        .hub-card:hover .hub-btn {
+            background: #ffffff !important;
+            color: #B8864B !important;
+            border-color: #ffffff !important;
+        }
+        .hub-card:hover .hub-arrow {
+            color: #B8864B !important;
+        }
+        .hub-social-icon { color: rgba(255, 255, 255, 0.6) !important; }
+        .hub-social-icon:hover { color: #B8864B !important; }
+
+        /* 隱藏不協調的舊背景元素 */
+        .modern-geo-bg,
+        .hub-iso-bg,
+        .hub-bg-circle { display: none !important; }
+        .hub-divider-line { display: none !important; }
+
+        /* LOGO 區 - 拉緊間距 */
+        .hub-logo-area {
+            padding: 0 !important;
+            margin: 0 !important;
+            flex-shrink: 0;
+        }
+        .hub-img-logo {
+            max-width: 280px !important;
+            width: 60% !important;
+            height: auto !important;
+            display: block;
+            margin: 0 auto;
+        }
+
+        /* 卡片區跟著 LOGO 緊密排版 */
+        .hub-main {
+            width: 100%;
+            margin: 0 !important;
+            padding: 0 !important;
+            flex-shrink: 0;
+        }
+        .hub-cards { margin: 0 !important; }
+
+        /* 社群區 - 緊接卡片下方 */
+        .hub-social-links {
+            margin-top: 8px !important;
+            padding: 0 !important;
+            flex-shrink: 0;
+        }
+        .hub-footer {
+            margin-top: 0 !important;
+            padding: 0 !important;
+            flex-shrink: 0;
+        }
+
+        /* 首頁卡片排版 (Desktop) — 一排 5 個橫向並排，整頁不超過 100vh */
+        @media (min-width: 769px) {
+            /* hub 容器：鎖死 100vh */
+            .hub-container {
+                min-height: 100vh !important;
+                max-height: 100vh !important;
+                padding: 22px 24px !important;
+                gap: 14px !important;
+                justify-content: space-between !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+            }
+            .hub-img-logo {
+                max-width: 190px !important;
+                flex-shrink: 0 !important;
+            }
+            .hub-main {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                flex: 1 !important;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 auto !important;
+                min-height: 0 !important;
+            }
+            /* 一排 5 個 */
+            .hub-cards {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                gap: 16px !important;
+                justify-content: center !important;
+                align-items: stretch !important;
+                width: 100% !important;
+            }
+            /* 五張卡片平均分配，左右滿版 */
+            .hub-card {
+                flex: 1 1 0 !important;
+                width: auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                padding: 22px 18px !important;
+            }
+            .hub-card.hub-group-purchase {
+                order: 1 !important;
+            }
+            .hub-card.hub-group-service {
+                order: 2 !important;
+            }
+            
+            /* 卡片內部緊湊版 */
+            .hub-card .hub-card-inner {
+                padding: 0 !important;
+                gap: 8px !important;
+                height: 100% !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+            }
+            .hub-card-content {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                text-align: center !important;
+            }
+            .hub-card-content h3 {
+                font-size: 1.2rem !important;
+                margin-bottom: 6px !important;
+                letter-spacing: 1.5px !important;
+                text-align: center !important;
+            }
+            .hub-card-content p {
+                font-size: 0.74rem !important;
+                line-height: 1.45 !important;
+                letter-spacing: 0.3px !important;
+                margin: 0 !important;
+                text-align: center !important;
+            }
+            .hub-card-series-tag {
+                font-size: 0.68rem !important;
+                padding: 3px 8px !important;
+                letter-spacing: 1.2px !important;
+                display: inline-block !important;
+                margin: 0 auto !important;
+            }
+            /* btn 改 inline 並縮小 */
+            .hub-btn {
+                position: static !important;
+                margin-top: 0 !important;
+                padding: 8px 0 0 !important;
+                font-size: 0.7rem !important;
+                letter-spacing: 1.5px !important;
+                bottom: auto !important;
+                left: auto !important;
+                right: auto !important;
+                justify-content: center !important;
+                gap: 6px !important;
+            }
+            
+            /* 社群區縮一點 */
+            .hub-social-links {
+                margin-top: 8px !important;
+                gap: 22px !important;
+                flex-shrink: 0 !important;
+            }
+            .hub-social-icon {
+                font-size: 22px !important;
+            }
+            .hub-footer {
+                margin-top: 0 !important;
+                flex-shrink: 0 !important;
+            }
+        }
+
+        /* 手機版 - 直排 5 卡片極簡版（不捲動，社群可見） */
+        @media (max-width: 768px) {
+            .hub-container {
+                min-height: 100vh !important;
+                padding: 14px 16px 12px !important;
+                gap: 10px !important;
+                justify-content: flex-start !important;
+            }
+            .hub-img-logo {
+                max-width: 180px !important;
+                width: 50% !important;
+            }
+
+            /* 改成直排 1 欄 5 個 */
+            .hub-main {
+                display: flex !important;
+                align-items: stretch !important;
+                flex: 1 !important;
+                width: 100% !important;
+                max-width: 420px !important;
+                margin: 0 auto !important;
+            }
+            .hub-cards {
+                display: flex !important;
+                flex-direction: column !important;
+                grid-template-columns: none !important;
+                grid-template-rows: none !important;
+                gap: 7px !important;
+                width: 100% !important;
+                max-width: 420px !important;
+                margin: 0 auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+                flex: 1 !important;
+                aspect-ratio: auto !important;
+                justify-content: center !important;
+            }
+
+            /* 採購/服務分組視覺 — 用 order 排序，並插入小分隔 */
+            .hub-card.hub-group-purchase { order: 1; }
+            .hub-card.hub-group-service { order: 2; }
+
+            /* 卡片 — 直排扁版 */
+            .hub-card {
+                flex: none !important;
+                width: 100% !important;
+                height: auto !important;
+                max-width: none !important;
+                min-width: 0 !important;
+                aspect-ratio: auto !important;
+                padding: 0 !important;
+                min-height: 0 !important;
+                max-height: none !important;
+                border-radius: 12px !important;
+                text-align: left !important;
+            }
+            .hub-card-inner {
+                padding: 11px 14px !important;
+                gap: 0 !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                height: auto !important;
+                width: 100% !important;
+                display: flex !important;
+                flex-direction: row !important;
+                text-align: left !important;
+            }
+            .hub-card-content {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: flex-start !important;
+                width: auto !important;
+                gap: 1px !important;
+                text-align: left !important;
+            }
+            .hub-card-series-tag {
+                font-size: 8.5px !important;
+                padding: 2px 7px !important;
+                letter-spacing: 1px !important;
+                margin: 0 8px 0 0 !important;
+                text-align: center !important;
+                flex-shrink: 0 !important;
+                align-self: center !important;
+            }
+
+            /* 標題 - 用實際 h3 內容（不要再 ::before 蓋掉了） */
+            .hub-card h3,
+            .hub-card-content h3 {
+                font-size: 14px !important;
+                line-height: 1.2 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                font-weight: 500 !important;
+                width: auto !important;
+                text-align: left !important;
+                letter-spacing: 1.5px !important;
+                color: #2C3742 !important;
+            }
+            /* 移除 ::before 覆蓋（讓 h3 真實內容顯示） */
+            .hub-card h3::before,
+            .hub-card-content h3::before {
+                display: none !important;
+                content: none !important;
+            }
+            .hub-card.personal h3::before,
+            .hub-card.pro h3::before,
+            .hub-card.products h3::before,
+            .hub-card.custom h3::before,
+            .hub-card.info h3::before { content: none !important; display: none !important; }
+
+            /* 副標 - 顯示小一點 */
+            .hub-card p,
+            .hub-card-content p {
+                display: block !important;
+                font-size: 9.5px !important;
+                line-height: 1.3 !important;
+                margin: 1px 0 0 !important;
+                padding: 0 !important;
+                color: #555 !important;
+                letter-spacing: 0 !important;
+            }
+
+            /* 按鈕只剩箭頭 */
+            .hub-btn {
+                padding: 0 !important;
+                font-size: 0 !important;
+                background: transparent !important;
+                color: #B8864B !important;
+                border: none !important;
+                margin: 0 0 0 8px !important;
+                width: auto !important;
+                box-shadow: none !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                flex-shrink: 0 !important;
+            }
+            .hub-btn span:not(.hub-arrow) {
+                display: none !important;
+            }
+            .hub-arrow {
+                color: #B8864B !important;
+                font-size: 18px !important;
+                font-weight: 300 !important;
+                display: inline-block !important;
+                line-height: 1 !important;
+            }
+
+            /* 點擊瞬間反白 */
+            .hub-card:active {
+                background: #B8864B !important;
+                transform: scale(0.98) !important;
+                transition: all 0.15s ease !important;
+            }
+            .hub-card:active h3,
+            .hub-card:active .hub-card-content h3,
+            .hub-card:active p,
+            .hub-card:active .hub-card-content p {
+                color: #ffffff !important;
+            }
+            .hub-card:active .hub-card-series-tag {
+                background: rgba(255, 255, 255, 0.2) !important;
+                color: #ffffff !important;
+            }
+            .hub-card:active .hub-arrow {
+                color: #ffffff !important;
+            }
+
+            /* 社群區縮小 + margin 收緊，確保看得到 */
+            .hub-social-links {
+                margin-top: 8px !important;
+                gap: 18px !important;
+            }
+            .hub-social-icon {
+                font-size: 17px !important;
+            }
+
+            /* 社群區 */
+            .hub-social-links {
+                gap: 22px !important;
+                margin-top: 0 !important;
+                padding: 0 !important;
+            }
+            .hub-social-icon i { font-size: 18px !important; }
+            .hub-footer { display: none !important; }
+        }
+    </style>
+    <div id="hub-overlay" class="hub-overlay" style="background: #2C3742; overflow: hidden; z-index: 10;">
+        <!-- 暫停輪播圖
+        <div id="hub-slideshow" class="hub-slideshow-container"></div>
+        -->
+
+        <!-- 現代極簡：鋁擠型側面長條 (莫蘭迪色系) -->
+        <div class="modern-geo-bg">
+            <!-- 鋁擠橫條 1 (深灰) -->
+            <div class="geo-long geo-long-1" style="color: #9ca3af; height: 40px; top: 15%; animation-duration: 25s;">
+                <svg viewBox="0 0 1000 40" preserveAspectRatio="none" style="width: 100%; height: 100%;">
+                    <rect width="1000" height="40" fill="currentColor" opacity="0.8" rx="4" />
+                    <!-- 側面溝槽 -->
+                    <rect x="0" y="15" width="1000" height="10" fill="#ffffff" opacity="0.6" />
+                </svg>
+            </div>
+            
+            <!-- 鋁擠橫條 2 (中灰) -->
+            <div class="geo-long geo-long-2" style="color: #d1d5db; height: 60px; top: 45%; animation-duration: 30s;">
+                <svg viewBox="0 0 1000 60" preserveAspectRatio="none" style="width: 100%; height: 100%;">
+                    <rect width="1000" height="60" fill="currentColor" opacity="0.8" rx="6" />
+                    <rect x="0" y="15" width="1000" height="8" fill="#ffffff" opacity="0.6" />
+                    <rect x="0" y="37" width="1000" height="8" fill="#ffffff" opacity="0.6" />
+                </svg>
+            </div>
+            
+            <!-- 鋁擠橫條 3 (淺灰) -->
+            <div class="geo-long geo-long-3" style="color: #e5e7eb; height: 80px; bottom: 15%; animation-duration: 35s;">
+                <svg viewBox="0 0 1000 80" preserveAspectRatio="none" style="width: 100%; height: 100%;">
+                    <rect width="1000" height="80" fill="currentColor" opacity="0.8" rx="8" />
+                    <rect x="0" y="20" width="1000" height="12" fill="#ffffff" opacity="0.6" />
+                    <rect x="0" y="48" width="1000" height="12" fill="#ffffff" opacity="0.6" />
+                </svg>
+            </div>
+            
+            <!-- 莫蘭迪漸層光暈，增加空間感 -->
+            <div class="hub-bg-circle" style="position:absolute; top:-10%; right:-5%; width:40vw; height:40vw; border-radius:50%; background:radial-gradient(circle, rgba(179,199,217,0.5) 0%, rgba(250,250,250,0) 70%); pointer-events: none;"></div>
+            <div class="hub-bg-circle" style="position:absolute; bottom:-10%; left:-10%; width:50vw; height:50vw; border-radius:50%; background:radial-gradient(circle, rgba(230,217,198,0.4) 0%, rgba(250,250,250,0) 70%); pointer-events: none;"></div>
+
+            <!-- 工業櫃體幾何線框 (Isometric Cabinets - Expanded Layering) -->
+            <div class="hub-iso-bg">
+                <!-- 櫃體 A (中景) -->
+                <svg class="hub-iso-frame frame-1" viewBox="0 0 200 250" style="opacity:0.18;">
+                    <path d="M100 50 L160 80 L100 110 L40 80 Z" /> 
+                    <path d="M40 80 L40 200 L100 230 L100 110 Z" /> 
+                    <path d="M100 110 L100 230 L160 200 L160 80 Z" /> 
+                    <path d="M40 120 L100 150 L160 120" stroke-dasharray="4,2" /> 
+                    <path d="M40 160 L100 190 L160 160" stroke-dasharray="4,2" />
+                </svg>
+                <!-- 櫃體 B (遠景) -->
+                <svg class="hub-iso-frame frame-2" viewBox="0 0 200 250" style="opacity:0.08;">
+                    <path d="M100 30 L180 70 L100 110 L20 70 Z" /> 
+                    <path d="M20 70 L20 220 L100 260 L100 110 Z" />
+                    <path d="M100 110 L100 260 L180 220 L180 70 Z" />
+                </svg>
+                <!-- 櫃體 C (垂直高塔型 - 新增) -->
+                <svg class="hub-iso-frame" style="top:15%; left:75%; width:150px; opacity:0.12;" viewBox="0 0 100 300">
+                    <path d="M50 20 L85 40 L50 60 L15 40 Z" />
+                    <path d="M15 40 L15 260 L50 280 L50 60 Z" />
+                    <path d="M50 60 L50 280 L85 260 L85 40 Z" />
+                    <path d="M15 100 L50 120 L85 100" />
+                    <path d="M15 170 L50 190 L85 170" />
+                </svg>
+                <!-- 櫃體 D (工業工作站 - 新增) -->
+                <svg class="hub-iso-frame" style="bottom:15%; left:30%; width:300px; opacity:0.08;" viewBox="0 0 300 200">
+                    <path d="M60 60 L240 60 L240 85 L60 85 Z" fill="rgba(0,0,0,0.01)" /> 
+                    <path d="M60 85 L60 160 M240 85 L240 160 M150 85 L150 160" /> 
+                    <path d="M60 140 L240 140" stroke-dasharray="3,3" /> 
+                </svg>
+                <!-- 櫃體 E (精密複合模組 - 新增) -->
+                <svg class="hub-iso-frame" style="top:45%; right:35%; width:140px; opacity:0.05; filter:blur(1px);" viewBox="0 0 100 100">
+                    <path d="M10 10 L90 10 L90 90 L10 90 Z" />
+                    <circle cx="50" cy="50" r="30" stroke-dasharray="2,2" />
+                    <path d="M50 0 L50 100 M0 50 L100 50" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="hub-container">
+
+            <!-- LOGO 區 (ALUMIBRO 鋁材兄弟 - 反白版用於深底) -->
+            <div class="hub-logo-area">
+                <img src="assets/logo-white.png" alt="ALUMIBRO 鋁材兄弟" class="hub-img-logo" style="max-width: 320px; width: 70%; height: auto; display: block; margin: 0 auto;">
+            </div>
+
+            <!-- 細分隔線 -->
+            <div class="hub-divider-line"></div>
+
+            <!-- 卡片區 + 客製橫幅 共用 wrapper -->
+            <div class="hub-main">
+                <!-- 卡片區 -->
+                <div class="hub-cards">
+                    <!-- ===== 採購群 ===== -->
+                    <!-- 選料 (B2C) -->
+                    <div class="hub-card personal hub-group-purchase" onclick="selectUserMode('B2C')">
+                        <div class="hub-card-inner">
+                            <div class="hub-card-series-tag personal-tag">MATERIALS</div>
+                            <div class="hub-card-content">
+                                <h3>選料</h3>
+                                <p>個人 DIY · 少量精選 · 圖形化選購</p>
+                            </div>
+                            <div class="hub-btn personal-btn">
+                                <span>進入選購</span>
+                                <span class="hub-arrow">→</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 批料 (B2B) -->
+                    <div class="hub-card pro hub-group-purchase" onclick="selectUserMode('B2B')">
+                        <div class="hub-card-inner">
+                            <div class="hub-card-series-tag pro-tag">WHOLESALE</div>
+                            <div class="hub-card-content">
+                                <h3>批料</h3>
+                                <p>企業批量採購 · Excel 匯入 · 物流預判</p>
+                            </div>
+                            <div class="hub-btn pro-btn">
+                                <span>進入採購中心</span>
+                                <span class="hub-arrow">→</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 自家成品 (PRODUCTS) -->
+                    <div class="hub-card products hub-group-purchase" onclick="selectUserMode('PRODUCTS')">
+                        <div class="hub-card-inner">
+                            <div class="hub-card-series-tag products-tag">PRODUCTS</div>
+                            <div class="hub-card-content">
+                                <h3>自家成品</h3>
+                                <p>ALUMIBRO 自有研發、自家製造</p>
+                            </div>
+                            <div class="hub-btn products-btn">
+                                <span>瀏覽商品</span>
+                                <span class="hub-arrow">→</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== 服務群 ===== -->
+                    <!-- 客製專案 (CUSTOM) -->
+                    <div class="hub-card custom hub-group-service" onclick="selectUserMode('CUSTOM')">
+                        <div class="hub-card-inner">
+                            <div class="hub-card-series-tag custom-tag">CUSTOM</div>
+                            <div class="hub-card-content">
+                                <h3>客製專案</h3>
+                                <p>圖面、CAD、想法 · 量身規劃報價</p>
+                            </div>
+                            <div class="hub-btn custom-btn">
+                                <span>開始諮詢</span>
+                                <span class="hub-arrow">→</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 品牌藝廊 (GALLERY) -->
+                    <div class="hub-card info hub-group-service" onclick="selectUserMode('INFO')">
+                        <div class="hub-card-inner">
+                            <div class="hub-card-series-tag info-tag">GALLERY</div>
+                            <div class="hub-card-content">
+                                <h3>品牌藝廊</h3>
+                                <p>作品案例 · 品牌故事 · 關於我們</p>
+                            </div>
+                            <div class="hub-btn info-btn">
+                                <span>深入了解</span>
+                                <span class="hub-arrow">→</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Links 移至卡片下方 -->
+            <div class="hub-social-links">
+                <a href="https://line.me/ti/p/~herald8283" target="_blank" class="hub-social-icon"
+                    title="Line ID: herald8283"><i class="fab fa-line"></i></a>
+                <a href="https://www.threads.net/@lutu_alumi" target="_blank" class="hub-social-icon" title="Threads"><i
+                        class="fa-brands fa-threads"></i></a>
+                <a href="https://www.instagram.com/lutu_alumi?igsh=MXhoY3lldHhlZHh3dw==" target="_blank"
+                    class="hub-social-icon" title="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="https://www.herald-alu.com/" target="_blank" class="hub-social-icon" title="官方網站"><i class="fas fa-globe"></i></a>
+                <a href="https://www.google.com.tw/maps/place/412%E5%8F%B0%E4%B8%AD%E5%B8%82%E5%A4%A7%E9%87%8C%E5%8D%80%E4%BB%81%E7%BE%8E%E8%B7%AF159%E5%B7%B711%E8%99%9F/@24.1031264,120.7076397,17z/data=!3m1!4b1!4m6!3m5!1s0x34693ccd618985a1:0x20c4b5c9ed633b6a!8m2!3d24.1031264!4d120.7102146!16s%2Fg%2F11f62nfj2j?entry=tts" target="_blank" class="hub-social-icon" title="Google 地圖"><i class="fas fa-map-marker-alt"></i></a>
+                <a href="javascript:void(0)" onclick="openCustomInquiry()" class="hub-social-icon" title="Email: alumibro@herald-alu.com"><i
+                        class="fas fa-envelope"></i></a>
+            </div>
+
+            <div class="hub-footer" style="margin-top: 12px;">
+            </div>
+        </div>
+    </div> <!-- Close #hub-overlay -->
+
+    <div class="app-container">
+        <!-- Mobile Hamburger Menu Button (B2C) - 桌機用 -->
+        <button class="mobile-hamburger" id="mobileHamburger" onclick="toggleMobileSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- ★ B2C 專屬極簡頂部導覽列 (僅留 20, 30, 40) -->
+        <div class="b2c-topbar" id="b2cTopbar">
+            <button class="b2c-back-btn" onclick="returnToHub()" title="返回首頁">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="b2c-brand-logo">ALUMIBRO <span class="b2c-tag">SHOP</span></span>
+            <div class="b2c-nav-tabs">
+                <button class="b2c-tab-btn active" id="b2c-tab-20" onclick="switchSeries('20')">20 系列</button>
+                <button class="b2c-tab-btn" id="b2c-tab-30" onclick="switchSeries('30')">30 系列</button>
+                <button class="b2c-tab-btn" id="b2c-tab-40" onclick="switchSeries('40')">40 系列</button>
+            </div>
+        </div>
+
+        <!-- ★ B2B 專屬專業導覽列 (由 JS 控制顯示) -->
+        <div class="b2b-topbar hidden" id="b2bTopbar" style="background:#2C3742 !important; color:white !important;">
+            <div class="b2b-topbar-inner">
+                <div class="b2b-brand" onclick="returnToHub()">
+                    <i class="fas fa-layer-group"></i> ALUMIBRO <b>PRO</b>
+                </div>
+                <div class="b2b-nav">
+                    <button class="b2b-nav-tab active" onclick="switchB2BSeries('20')">20系列</button>
+                    <button class="b2b-nav-tab" onclick="switchB2BSeries('30')">30系列</button>
+                    <button class="b2b-nav-tab" onclick="switchB2BSeries('40')">40系列</button>
+                </div>
+            </div>
+        </div>
+
+        <aside class="sidebar" id="b2cSidebar">
+            <div class="brand" onclick="returnToHub()" title="返回首頁選擇身份" style="cursor: pointer;">
+                <i class="fas fa-chevron-left" style="font-size: 0.8em; margin-right: 5px;"></i> ALUMIBRO 鋁材兄弟
+            </div>
+            <nav class="nav-tabs">
+                <button class="nav-item active" onclick="switchSeries('20')">20 系列</button>
+                <button class="nav-item" onclick="switchSeries('30')">30 系列</button>
+                <button class="nav-item" onclick="switchSeries('40')">40 系列</button>
+                <div class="separator"></div>
+                <button class="nav-item project-tab" onclick="switchView('projects')">專案範例教學</button>
+                <button class="nav-item custom-tab" onclick="switchView('custom')">客製成品</button>
+                <button class="nav-item about-tab" onclick="switchView('about')">關於我們</button>
+
+            </nav>
+
+        </aside>
+        <!-- Mobile Sidebar Overlay Backdrop -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+        <main class="main-content">
+            <!-- 品牌與藝廊專用：無界線懸浮導覽列 (Frameless Floating UI) -->
+            <nav id="info-topbar" class="info-topbar hidden">
+                <div class="info-topbar-container">
+                    <div class="info-return" onclick="returnToHub()">
+                        <i class="fas fa-chevron-left"></i> <span>返回首頁</span>
+                    </div>
+                    <div class="info-divider"></div>
+                    <button class="info-tab project-tab" onclick="switchView('projects')">專案範例</button>
+                    <button class="info-tab custom-tab" onclick="switchView('custom')">客製成品</button>
+                    <button class="info-tab about-tab" onclick="switchView('about')">關於我們</button>
+                </div>
+            </nav>
+            <style>
+                /* INFO 模式專用滿版覆蓋：消除外層預設的 30px padding */
+                body.mode-info .main-content {
+                    padding: 0 !important;
+                }
+                /* 讓其他清單頁面保有舒適的內縮，避免貼齊邊緣 */
+                body.mode-info #view-projects,
+                body.mode-info #view-custom {
+                    padding: 30px;
+                }
+                @media (max-width: 768px) {
+                    body.mode-info #view-projects,
+                    body.mode-info #view-custom {
+                        padding: 15px;
+                    }
+                }
+
+                .info-topbar {
+                    position: sticky;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    z-index: 1000;
+                    background: #2C3742;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    border-bottom: none;
+                }
+                .info-topbar-container {
+                    display: flex;
+                    align-items: center;
+                    padding: 15px 40px;
+                    gap: 25px;
+                }
+                .info-return {
+                    cursor: pointer;
+                    font-size: 0.95rem;
+                    font-weight: 500;
+                    color: #ffffff;
+                    letter-spacing: 2px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: opacity 0.3s;
+                    opacity: 0.6;
+                }
+                .info-return:hover {
+                    opacity: 1;
+                }
+                .info-divider {
+                    width: 1px;
+                    height: 16px;
+                    background: rgba(255, 255, 255, 0.2);
+                    margin: 0 5px;
+                }
+                .info-tab {
+                    background: transparent !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    font-size: 0.95rem;
+                    color: rgba(255,255,255,0.5) !important;
+                    cursor: pointer;
+                    letter-spacing: 1.5px;
+                    padding: 5px 0;
+                    font-weight: 400;
+                    transition: color 0.3s, font-weight 0.3s;
+                }
+                .info-tab:hover {
+                    color: #ffffff !important;
+                }
+                .info-tab.active {
+                    background: transparent !important;
+                    color: #ffffff !important;
+                    font-weight: 600 !important;
+                    border-bottom: 2px solid #B8864B !important;
+                    padding-bottom: 3px;
+                    text-shadow: none;
+                }
+                .info-tab.active::after {
+                    display: none !important;
+                }
+                @media (max-width: 768px) {
+                    .info-topbar-container {
+                        padding: 15px 20px;
+                        gap: 15px;
+                        overflow-x: auto;
+                    }
+                    .info-tab {
+                        font-size: 0.85rem;
+                        white-space: nowrap;
+                    }
+                }
+            </style>
+
+            <div id="view-product" class="content-view">
+                <header class="page-header">
+                    <h2 id="page-title">20 系列選購</h2>
+                    <button onclick="openOrderQueryModal()" class="btn-query">
+                        <i class="fas fa-search"></i> 查詢訂單
+                    </button>
+                </header>
+                <section id="aluminum-section" class="section-block">
+                    <div id="series-desc-container" class="series-desc-container" style="color: #171717 !important;">
+                    </div>
+                    <div class="section-title">鋁擠型規格選擇</div>
+                    <div id="aluminum-grid" class="aluminum-grid-container">
+                    </div>
+                    <div id="aluminum-input-area" class="input-panel hidden">
+                        <div class="input-top-row">
+                            <div class="selected-info">
+                                已選擇：<span id="selected-profile-name" class="highlight-text"></span>
+                            </div>
+                            <div class="input-group">
+                                <input type="number" id="profile-len" placeholder="長度 (至少100mm)" min="100" step="1">
+                                <input type="number" id="profile-qty" placeholder="數量" min="1" value="1">
+                                <button class="btn-add" onclick="addProfileToCart()">加入清單</button>
+                            </div>
+                        </div>
+                        <div id="current-specs-list" class="specs-list-container"></div>
+                    </div>
+                </section>
+                <hr class="divider">
+                <section class="section-block">
+                    <div class="section-title">配件選購</div>
+                    <div id="accessories-list" class="accessories-container"></div>
+                    <div id="accessories-panel" class="input-panel hidden" style="margin-top:20px;">
+                        <div class="input-top-row"
+                            style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 5px;">
+                            <div class="selected-info">
+                                已選配件清單
+                            </div>
+                        </div>
+                        <div id="selected-accessories-list" class="specs-list-container"
+                            style="border-top: none; margin-top: 0;"></div>
+                    </div>
+                </section>
+            </div>
+            <div id="view-projects" class="content-view hidden">
+                <header class="page-header">
+                    <h2>專案範例教學</h2>
+                </header>
+                <div id="projects-container" class="projects-list"></div>
+            </div>
+            <div id="view-custom" class="content-view hidden">
+                <header class="page-header">
+                    <h2>客製成品</h2>
+                </header>
+                <div id="custom-cases-container" class="custom-cases-list">
+                    <p class="loading-text">載入中...</p>
+                </div>
+            </div>
+            
+            <div id="view-about" class="content-view hidden" style="position: relative; overflow: hidden; height: calc(100vh - 55px); display: flex; flex-direction: column; background: #3D4D5C; padding: 0;">
+                
+                <!-- 滿版無漸層照片 (固定 45% 高度) -->
+                <div style="position: relative; height: 45%; min-height: 200px; width: 100%; overflow: hidden; background: #2C3742; flex-shrink: 0;">
+                    <div id="about-slideshow" class="hub-slideshow-container" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
+                </div>
+
+                <!-- 下半部：書面/雜誌感 (固定高度，不捲動) -->
+                <div style="position: relative; flex: 1; width: 100%; display: flex; justify-content: center; align-items: center; z-index: 3; padding: 0 40px; background: #3D4D5C;">
+                    
+                    <div class="about-content-fade-in" style="max-width: 850px; width: 100%;">
+                        <!-- 頂部低調線 -->
+                        <div style="width: 100%; height: 1px; background: rgba(255,255,255,0.15); margin-bottom: 35px;"></div>
+                        
+                        <div style="display: flex; gap: 60px; align-items: flex-start;">
+                            <!-- 左側：標題區 -->
+                            <div style="width: 200px; flex-shrink: 0;">
+                                <h2 style="font-weight: 300; letter-spacing: 6px; color: #ffffff; font-size: 1.8rem; margin: 0; line-height: 1.4;">
+                                    ALUMIBRO<br>
+                                    <span style="font-size: 0.95rem; letter-spacing: 10px; color: rgba(255,255,255,0.5);">鋁材兄弟</span>
+                                </h2>
+                            </div>
+                            
+                            <!-- 右側：內文區 -->
+                            <div style="flex: 1;">
+                                <div style="color: rgba(255,255,255,0.85); line-height: 2; font-size: 0.92rem; font-weight: 300; letter-spacing: 1px; text-align: justify;">
+                                    <p style="margin-bottom: 20px;">
+                                        我們專注於工業級鋁擠型的應用設計與銷售，致力於提供最直覺、高質感的模組化結構方案。在瞬息萬變的自造者時代，我們深知結構的穩定性與彈性擴充對於每一個專案的成敗至關重要。
+                                    </p>
+                                    <p style="margin-bottom: 35px; color: rgba(255,255,255,0.6);">
+                                        從個人創客的 DIY 專案，到企業級的自動化機架，ALUMIBRO 鋁材兄弟都能為您提供專業的材料與技術支援。我們不僅提供精密零件，更期許能成為您將每一個構想化為真實的堅實後盾。
+                                    </p>
+                                </div>
+
+                                <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px; flex-wrap: wrap;">
+                                    <a href="https://lin.ee/O1O2D4k" target="_blank" class="about-social-icon" title="官方 LINE 客服">
+                                        <i class="fab fa-line"></i>
+                                    </a>
+                                    <a href="https://www.instagram.com/lutu_alumi" target="_blank" class="about-social-icon" title="Instagram @lutu_alumi">
+                                        <i class="fab fa-instagram"></i>
+                                    </a>
+                                    <a href="https://www.threads.net/@lutu_alumi" target="_blank" class="about-social-icon" title="Threads @lutu_alumi">
+                                        <i class="fa-brands fa-threads"></i>
+                                    </a>
+                                    <a href="https://www.herald-alu.com/" target="_blank" class="about-social-icon" title="官方網站">
+                                        <i class="fas fa-globe"></i>
+                                    </a>
+                                    <a href="https://www.google.com.tw/maps/place/412%E5%8F%B0%E4%B8%AD%E5%B8%82%E5%A4%A7%E9%87%8C%E5%8D%80%E4%BB%81%E7%BE%8E%E8%B7%AF159%E5%B7%B711%E8%99%9F/@24.1031264,120.7076397,17z/data=!3m1!4b1!4m6!3m5!1s0x34693ccd618985a1:0x20c4b5c9ed633b6a!8m2!3d24.1031264!4d120.7102146!16s%2Fg%2F11f62nfj2j?entry=tts" target="_blank" class="about-social-icon" title="Google 地圖">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </a>
+                                    <a href="mailto:alumibro@herald-alu.com" class="about-social-icon" title="Email: alumibro@herald-alu.com">
+                                        <i class="fas fa-envelope"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 動畫樣式定義 -->
+                <style>
+                    /* 莫蘭迪三色漸層流動骨架屏 */
+                    @keyframes morandiFlow {
+                        0% { background-position: 0% 50%; }
+                        50% { background-position: 100% 50%; }
+                        100% { background-position: 0% 50%; }
+                    }
+                    .morandi-skeleton {
+                        background: linear-gradient(-45deg, #d1d5d8, #e3e0d8, #cbd2cc);
+                        background-size: 400% 400%;
+                        animation: morandiFlow 8s ease infinite;
+                    }
+                    /* 覆蓋 HUB 的預設黑底與 70% 透明度，讓關於我們頁面的照片 100% 明亮並能透出骨架屏 */
+                    #about-slideshow {
+                        background-color: transparent !important;
+                    }
+                    #about-slideshow .hub-slide.active {
+                        opacity: 1 !important;
+                    }
+
+                    .about-content-fade-in {
+                        animation: aboutFadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    @keyframes aboutFadeInUp {
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .editorial-btn:hover {
+                        background: #B8864B !important;
+                        color: #fff !important;
+                    }
+                    .about-social-icon {
+                        color: rgba(255,255,255,0.5) !important;
+                        font-size: 1.2rem;
+                        transition: all 0.2s;
+                        text-decoration: none;
+                    }
+                    .about-social-icon:hover {
+                        color: #B8864B !important;
+                        transform: translateY(-3px);
+                    }
+                    .editorial-link:hover {
+                        color: #111 !important;
+                        border-bottom: 1px solid #111 !important;
+                    }
+                    .about-social-icon {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        border: 1px solid rgba(0,0,0,0.15);
+                        color: #555;
+                        font-size: 1.05rem;
+                        text-decoration: none;
+                        transition: all 0.25s ease;
+                    }
+                    .about-social-icon:hover {
+                        background: #111;
+                        border-color: #111;
+                        color: #fff;
+                        transform: translateY(-2px);
+                    }
+                    @media (max-width: 768px) {
+                        #view-about > div:nth-child(2) > div {
+                            flex-direction: column !important;
+                            gap: 30px !important;
+                        }
+                        #view-about > div:nth-child(2) {
+                            padding: 30px 20px !important;
+                            align-items: flex-start !important;
+                        }
+                        #view-about {
+                            height: auto !important; /* 手機版不強制一頁滿版，避免字被裁切 */
+                            min-height: calc(100vh - 55px);
+                        }
+                    }
+                </style>
+            </div>
+
+            <!-- 客製設計詢問導引 (INQUIRY GUIDE) -->
+            <div id="view-custom-inquiry" class="content-view hidden">
+                <div class="inquiry-guide-container">
+                    <div class="inquiry-header">
+                        <div class="inquiry-return" onclick="returnToHub()">
+                            <i class="fas fa-arrow-left"></i> 返回首頁
+                        </div>
+                        <h2>客製設計 / OEM 諮詢服務</h2>
+                        <p>我們提供專業的鋁擠型結構規劃，協助您的創意轉化為現實</p>
+                    </div>
+
+                    <div class="inquiry-steps">
+                        <div class="inquiry-step">
+                            <div class="step-num">01</div>
+                            <div class="step-content">
+                                <h3>準備資料</h3>
+                                <p>請準備您的 CAD 圖檔、尺寸草圖或現場參考照片。</p>
+                                <div class="step-icons">
+                                    <span><i class="fas fa-file-invoice"></i> 尺寸圖</span>
+                                    <span><i class="fas fa-file-code"></i> CAD 檔</span>
+                                    <span><i class="fas fa-camera"></i> 現場照</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="inquiry-step">
+                            <div class="step-num">02</div>
+                            <div class="step-content">
+                                <h3>聯繫諮詢</h3>
+                                <p>點擊下方按鈕開啟郵件，我們已為您準備好資訊格式。</p>
+                            </div>
+                        </div>
+
+                        <div class="inquiry-step">
+                            <div class="step-num">03</div>
+                            <div class="step-content">
+                                <h3>專業報價</h3>
+                                <p>工程人員將於 1-2 工作天內提供初步規劃與建議報價。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="inquiry-cta-area">
+                        <button onclick="openCustomInquiry()" class="inquiry-main-btn">
+                            <i class="fas fa-envelope"></i> 用 Gmail 發送諮詢
+                        </button>
+                    </div>
+
+                    <div class="inquiry-contact-alt">
+                        <span>其他聯繫方式：</span>
+                        <a href="https://line.me/ti/p/~herald8283" target="_blank"><i class="fab fa-line"></i> Line
+                            客服</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
+    <!-- Order Query Modal -->
+    <div id="query-modal" class="lightbox" onclick="closeQueryModal()">
+        <div class="modal-content" onclick="event.stopPropagation()"
+            style="background: white; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; position: relative;">
+            <button class="close-lightbox" onclick="closeQueryModal()"
+                style="position: absolute; top: 10px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #545454;">×</button>
+            <h3 style="margin-bottom: 20px; color: #333; text-align: center;">📜 訂單查詢</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="tel" id="query-phone" placeholder="輸入手機號碼"
+                    style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <button onclick="submitOrderQuery()" class="btn-query" style="padding: 10px 20px;">查詢</button>
+            </div>
+            <div id="query-results" style="max-height: 300px; overflow-y: auto;">
+                <!-- Results injected here -->
+                <div style="text-align: center; color: #888; padding: 20px;">請輸入手機號碼查詢歷史訂單</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="floating-cart-btn" onclick="toggleCart()">
+        <i class="fas fa-shopping-cart"></i> 詢價單 <span id="cart-count">0</span>
     </button>
-    <button class="nav-btn accent" onclick="newBudget()">
-      <i class="fas fa-plus"></i> <span>新建預算</span>
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <div class="cart-title">🛒 訂購清單</div>
+            <div class="close-cart" onclick="toggleCart()">×</div>
+        </div>
+        <div class="cart-scroll-wrapper">
+            <div class="cart-body" id="cart-items"></div>
+            <div class="cart-footer">
+                <div class="total-row">
+                    <span>預估總額</span>
+                    <span style="color:#B8864B; font-weight:600;">NT$<span id="cart-total">0</span></span>
+                </div>
+                <form id="order-form">
+                    <input type="text" name="name" placeholder="您的姓名" required>
+                    <input type="tel" name="phone" placeholder="連絡電話" required>
+                    <input type="email" name="email" placeholder="電子信箱 (接收報價單)" required>
+                    <input type="text" id="address-input" name="address" placeholder="配送地址" required>
+                    <select name="delivery"
+                        style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #f9f9f9; margin-bottom: 10px;">
+                        <option value="宅配(運費待報價)">宅配寄送</option>
+                        <option value="自取">公司自取</option>
+                        <option value="店到店(含60元運費)">店到店(純配件)</option>
+                        <option value="公司配送(運費待報價)">公司配送(大量)</option>
+                    </select>
+                    <textarea name="note" placeholder="備註 (選填)" rows="2"></textarea>
+                    <button type="submit" id="btn-submit" class="btn-submit">送出訂單</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+        <button class="close-lightbox" onclick="closeLightbox()">×</button>
+    </div>
+
+    <!-- Mobile Floating Hot Sales Button -->
+    <button class="floating-hot-btn" onclick="toggleHotSalesSidebar()">
+        <i class="fas fa-fire" style="margin-right:5px;"></i> 熱銷排行
     </button>
-  </div>
-</nav>
 
-<div id="toast" class="toast hidden"></div>
+    <!-- Mobile Hot Sales Modal -->
+    <!-- Mobile Hot Sales Sidebar (Replaces Modal) -->
+    <div id="hot-sales-sidebar" class="hot-sales-sidebar">
+        <div class="cart-header">
+            <div class="cart-title"><i class="fas fa-crown" style="color:#ffd700; margin-right:5px;"></i> 熱銷排行</div>
+            <div class="close-cart" onclick="toggleHotSalesSidebar()">×</div>
+        </div>
+        <div class="cart-scroll-wrapper">
+            <div class="cart-body" id="hot-sales-mobile-body">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
 
-<!-- LIST VIEW -->
-<div id="view-list" class="view">
-  <div class="page-header">
-    <h2><i class="fas fa-folder-open"></i> 預算清單</h2>
-    <span id="list-count" class="badge">讀取中...</span>
-  </div>
-  <div id="budget-list-container">
-    <div class="loading"><i class="fas fa-spinner fa-spin"></i> 載入中...</div>
-  </div>
-</div>
+    <!-- 訂單提交載入動畫覆蓋層 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-title">正在處理您的訂單...</div>
 
-<!-- EDITOR VIEW -->
-<div id="view-editor" class="view hidden">
-  <div class="card">
-    <div class="card-header">
-      <i class="fas fa-clipboard-list"></i> 專案基本資訊
-      <span id="budget-id-badge" class="id-badge"></span>
-    </div>
-    <div class="form-grid">
-      <div class="field-group">
-        <label>專案名稱 <span class="req">*</span></label>
-        <input type="text" id="proj-name" placeholder="例：鋁製輕量餐車 V1">
-      </div>
-      <div class="field-group">
-        <label>產品類型</label>
-        <select id="proj-type">
-          <option>餐車/攤車</option>
-          <option>板凳/座椅</option>
-          <option>展示架</option>
-          <option>收納架</option>
-          <option>戶外家具</option>
-          <option>客製化結構件</option>
-          <option>其他</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <label>負責人</label>
-        <input type="text" id="proj-owner" placeholder="姓名">
-      </div>
-      <div class="field-group">
-        <label>預計完成日</label>
-        <input type="date" id="proj-date">
-      </div>
-      <div class="field-group full">
-        <label>專案說明</label>
-        <textarea id="proj-desc" rows="2" placeholder="產品用途、規格概述、市場目標..."></textarea>
-      </div>
-    </div>
-  </div>
+            <!-- 新版訂單動畫 (Flexbox) -->
+            <div class="process-animation">
+                <!-- 步驟 1 -->
+                <div class="process-step" id="pStep1">
+                    <div class="icon">📝</div>
+                    <div class="label">收單中</div>
+                </div>
 
-  <div class="card">
-    <div class="card-header">
-      <i class="fas fa-calculator"></i> 開發費用明細
-      <div class="card-header-actions">
-        <button class="btn-xs" onclick="addRowDefault()"><i class="fas fa-plus"></i> <span>新增項目</span></button>
-        <button class="btn-xs outline" onclick="addRowFromTemplate()"><i class="fas fa-magic"></i> <span>快速範本</span></button>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <table id="budget-table">
-        <thead>
-          <tr>
-            <th style="width:32px">#</th>
-            <th>項目名稱</th>
-            <th style="width:80px">類別</th>
-            <th style="width:70px">數量</th>
-            <th style="width:65px">單位</th>
-            <th style="width:110px">單價 (NT$)</th>
-            <th style="width:100px">小計</th>
-            <th style="width:110px">備註</th>
-            <th style="width:36px"></th>
-          </tr>
-        </thead>
-        <tbody id="budget-body"></tbody>
-      </table>
-    </div>
-    <div class="bar-wrap">
-      <div class="budget-bar" id="budget-bar"></div>
-      <div id="category-legend" class="legend-row"></div>
-    </div>
-  </div>
+                <!-- 連接線 -->
+                <div class="process-line" id="pLine">
+                    <div class="process-line-fill"></div>
+                </div>
 
-  <div class="card">
-    <div class="card-header"><i class="fas fa-coins"></i> 預算匯總</div>
-    <div class="summary-grid">
-      <div class="sum-card">
-        <div class="s-label">未稅小計</div>
-        <div class="s-value" id="sum-subtotal">NT$0</div>
-      </div>
-      <div class="sum-card">
-        <div class="s-label">稅金（5%）</div>
-        <div class="s-value" id="sum-tax">NT$0</div>
-      </div>
-      <div class="sum-card highlight">
-        <div class="s-label">含稅總計</div>
-        <div class="s-value" id="sum-total">NT$0</div>
-      </div>
+                <!-- 步驟 2 -->
+                <div class="process-step" id="pStep2">
+                    <div class="icon">✅</div>
+                    <div class="label">已派單</div>
+                </div>
+            </div>
+            <div class="progress-text" id="progressText">正在處理您的訂單...</div>
+        </div>
     </div>
-    <div class="buffer-row">
-      <label>預算緩衝</label>
-      <input type="number" id="buffer-pct" value="10" min="0" max="100" step="1" oninput="recalc()"> %
-      <span class="buffer-result">含緩衝總預算：<strong id="sum-buffer">NT$0</strong></span>
-    </div>
-  </div>
 
-  <div class="action-bar">
-    <button class="btn primary" onclick="saveBudget()"><i class="fas fa-save"></i> 儲存至 Google Sheets</button>
-    <button class="btn accent" onclick="exportToSheet()"><i class="fas fa-table"></i> 展開至獨立 Sheet</button>
-    <button class="btn outline" onclick="exportCSV()"><i class="fas fa-file-csv"></i> 匯出 CSV</button>
-    <button class="btn ghost" onclick="showView('list')"><i class="fas fa-arrow-left"></i> 返回清單</button>
-  </div>
-</div>
+    <!-- B2B Dashboard (Hidden by default, shown in B2B Mode) -->
+    <div id="b2b-dashboard" class="b2b-dashboard hidden">
+        <!-- Sidebar Removed -->
 
-<!-- TEMPLATE MODAL -->
-<div id="template-modal" class="modal-overlay hidden">
-  <div class="modal">
-    <div class="modal-header">
-      <h3><i class="fas fa-magic"></i> 快速範本</h3>
-      <button onclick="closeModal('template-modal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <p style="color:#666;font-size:13px;margin-bottom:12px">選擇要套用的範本項目</p>
-      <div id="template-list" class="template-grid"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn primary" onclick="applyTemplate()">套用選取</button>
-      <button class="btn ghost" onclick="closeModal('template-modal')">取消</button>
-    </div>
-  </div>
-</div>
+        <div class="b2b-main">
+            <!-- ★ 手機版 B2B 頂部導覽列（共用 B2C topbar 樣式）-->
+            <div class="mobile-b2b-topbar" id="mobileB2BTopbar">
+                <button class="mobile-b2c-back" onclick="returnToHub()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span class="mobile-b2c-brand">ALUMIBRO <span class="pro-tag" style="font-size:0.58rem; letter-spacing:1px;">PRO</span></span>
+                <div class="mobile-b2c-tabs">
+                    <button class="mobile-b2c-tab active" id="mb-b2b-20" onclick="switchB2BSeries('20'); setMobileB2BTab(this)">20系列</button>
+                    <button class="mobile-b2c-tab" id="mb-b2b-30" onclick="switchB2BSeries('30'); setMobileB2BTab(this)">30系列</button>
+                    <button class="mobile-b2c-tab" id="mb-b2b-40" onclick="switchB2BSeries('40'); setMobileB2BTab(this)">40系列</button>
+                    <div class="mobile-b2c-sep"></div>
+                    <button class="mobile-b2c-tab" onclick="openBOMUploadModal()"><i class="fas fa-file-upload"></i> 匯入</button>
+                    <button class="mobile-b2c-tab" onclick="downloadBOMTemplate()"><i class="fas fa-file-download"></i> 下載</button>
+                    <button class="mobile-b2c-tab mobile-b2b-query" onclick="openOrderQueryModal()"><i class="fas fa-search"></i> 查詢</button>
+                </div>
+            </div>
 
-<script src="script.js"></script>
+            <div class="b2b-header">
+                <!-- Single row: Title + Series Tabs + Search + Exit -->
+                <div class="b2b-header-compact" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                    <!-- Left: Title -->
+                    <h2 style="margin:0; white-space:nowrap; cursor: pointer; font-size:1.1rem; font-weight:800; letter-spacing:1px;" onclick="returnToHub()" title="返回首頁">
+                        <i class="fas fa-chevron-left" style="font-size: 0.8em; margin-right: 10px; opacity:0.7;"></i> ALUMIBRO <b>PRO</b>
+                    </h2>
+
+                    <!-- Left: Series Tabs -->
+                    <div class="b2b-series-tabs" style="display:flex; gap:10px;">
+                        <button class="b2b-tab-btn active" onclick="switchB2BSeries('20')"
+                            data-series="20">20系列</button>
+                        <button class="b2b-tab-btn" onclick="switchB2BSeries('30')" data-series="30">30系列</button>
+                        <button class="b2b-tab-btn" onclick="switchB2BSeries('40')" data-series="40">40系列</button>
+                    </div>
+
+                    <!-- Right: Actions (Import + Template + Search + Exit) -->
+                    <div class="b2b-action-group">
+                        <!-- Global Search Input -->
+                        <div class="b2b-search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="b2b-search-input" placeholder="搜尋全域商品 (如: M6, 鋁材...)"
+                                oninput="handleB2BSearch(this.value)">
+                        </div>
+
+                        <button class="btn-xs btn-outline" onclick="openBOMUploadModal()">
+                            <i class="fas fa-file-upload"></i> 匯入 Excel
+                        </button>
+                        <button class="btn-xs btn-outline" onclick="downloadBOMTemplate()">
+                            <i class="fas fa-file-download"></i> 下載範本
+                        </button>
+
+                        <button class="btn-query" onclick="openOrderQueryModal()">
+                            <i class="fas fa-search"></i> 查詢訂單
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="b2b-content">
+                <!-- Left: Product Selection (List) -->
+                <div class="b2b-product-panel">
+                    <div id="b2b-product-list" class="b2b-product-list">
+                        <!-- JS Rendered Items (Table View) -->
+                    </div>
+                </div>
+
+                <!-- Middle: Product Detail & Analysis -->
+                <div class="b2b-detail-panel">
+                    <div id="b2b-product-detail" class="b2b-product-detail-card">
+                        <div class="detail-placeholder">
+                            👈 請從左側選擇商品查看詳情
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: BOM Manifest Section -->
+                <div class="b2b-analysis-panel">
+                    <!-- Analysis Summary (Weight/Series) -->
+                    <div id="b2b-analysis-charts"></div>
+
+                    <div id="b2b-cart-list" class="b2b-cart-list">
+                        <!-- JS Rendered Cart Items (Compact) -->
+                        <div style="text-align:center; padding:30px; color:#999;">
+                            尚未加入任何商品<br>
+                            <small>請從左側點擊商品加入，或使用上方「匯入 Excel」功能</small>
+                        </div>
+                    </div>
+                    <div class="b2b-footer">
+                        <div class="b2b-total">
+                            預估總額: <span id="b2b-total-price">NT$0</span>
+                        </div>
+                        <button class="b2b-btn-submit" onclick="openB2BSubmitModal()">
+                            <i class="fas fa-paper-plane"></i> 提交詢價單
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOM Upload Modal -->
+    <div id="bom-upload-modal" class="hub-overlay hidden" style="background:rgba(0,0,0,0.5); z-index:10000;">
+        <div class="hub-container"
+            style="max-width:600px; background:white; padding:30px; border-radius:12px; text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0;"><i class="fas fa-file-excel" style="color:#27ae60;"></i> 匯入 BOM 表</h3>
+                <button class="btn-xs" onclick="closeBOMUploadModal()"
+                    style="border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div id="upload-step-1">
+                <div class="upload-area" id="drop-zone"
+                    style="border:2px dashed #ccc; padding:40px; text-align:center; border-radius:8px; cursor:pointer; background:#fafafa;">
+                    <i class="fas fa-cloud-upload-alt" style="font-size:3rem; color:#ccc; margin-bottom:15px;"></i>
+                    <p style="color:#666; margin-bottom:10px;">拖放 Excel 檔案至此，或點擊上傳</p>
+                    <input type="file" id="bom-file-input" accept=".xlsx, .xls" style="display:none;"
+                        onchange="handleFileSelect(this)">
+                    <button class="btn-xs btn-outline"
+                        onclick="document.getElementById('bom-file-input').click()">選擇檔案</button>
+                    <div style="margin-top:10px; font-size:0.8rem; color:#999;">
+                        支援格式: .xlsx, .xls |
+                        <a href="javascript:void(0)" onclick="downloadBOMTemplate()"
+                            style="color:#27ae60; text-decoration:underline;">下載範例範本 (.csv)</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="upload-step-2" style="display:none;">
+                <div style="margin-bottom:15px; font-weight:bold; color:#2c3e50; display:none !important;">
+                    欄位對應確認
+                    <span style="font-size:0.8rem; color:#e67e22; font-weight:normal; margin-left:10px;">
+                        <i class="fas fa-info-circle"></i> AI 已自動識別欄位
+                    </span>
+                </div>
+
+                <div
+                    style="background:#f8f9fa; padding:15px; border-radius:6px; margin-bottom:20px; display:none !important;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:0.8rem; display:block; color:#7f8c8d;">產品大類 (選填)</label>
+                            <select id="map-cat" class="detail-input"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; display:block; color:#7f8c8d;">產品類型 (選填)</label>
+                            <select id="map-series" class="detail-input"></select>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr; gap:10px; margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:0.8rem; display:block; color:#7f8c8d;">品項名稱 (必要)</label>
+                            <select id="map-name" class="detail-input"></select>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div>
+                            <label style="font-size:0.8rem; display:block; color:#7f8c8d;">長度 (鋁材標註用)</label>
+                            <select id="map-len" class="detail-input"></select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.8rem; display:block; color:#27ae60; font-weight:bold;">訂購數量
+                                (必要)</label>
+                            <select id="map-qty" class="detail-input" style="border-color:#27ae60;"></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="upload-preview"
+                    style="max-height:200px; overflow-y:auto; border:1px solid #eee; margin-bottom:20px; font-size:0.85rem;">
+                    <!-- Preview Table -->
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div id="upload-stats" style="color:#666; font-size:0.9rem;"></div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-xs btn-outline" onclick="resetUpload()">重選檔案</button>
+                        <button class="btn-add-detail" onclick="processBOMImport()" style="width:auto; margin-top:0;">
+                            <i class="fas fa-file-import"></i> 確認匯入
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- B2B Assessment/Checkout Modal -->
+    <div id="b2b-submit-modal" class="hub-overlay hidden" style="background:rgba(0,0,0,0.5); z-index:10000;">
+        <div class="hub-container"
+            style="max-width:500px; background:white; padding:30px; border-radius:12px; text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="margin:0;"><i class="fas fa-file-invoice-dollar" style="color:#2980b9;"></i> 發送詢價單</h3>
+                <button class="btn-xs" onclick="closeB2BSubmitModal()"
+                    style="border:none; font-size:1.2rem; cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px; font-size:0.9rem;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="color:#666;">BOM 項目數</span>
+                    <span style="font-weight:bold;" id="b2b-modal-count">0</span>
+                </div>
+                <div
+                    style="display:flex; justify-content:space-between; font-size:1.1rem; color:#B8864B; font-weight:bold;">
+                    <span>預估總額</span>
+                    <span id="b2b-modal-total">NT$0</span>
+                </div>
+            </div>
+
+            <form id="b2b-order-form" onsubmit="submitB2BOrder(event)">
+                <div class="detail-input-group">
+                    <label>聯絡人姓名 *</label>
+                    <input type="text" name="name" class="detail-input" required placeholder="王大明">
+                </div>
+                <div class="detail-input-group">
+                    <label>電話 / 分機 *</label>
+                    <input type="tel" name="phone" class="detail-input" required placeholder="0912-345-678">
+                </div>
+                <div class="detail-input-group">
+                    <label>公司 / 單位名稱</label>
+                    <input type="text" name="company" class="detail-input" placeholder="例如：台大機械系 / 某某科技">
+                </div>
+                <div class="detail-input-group">
+                    <label>Email (接收報價單) *</label>
+                    <input type="email" name="email" class="detail-input" required placeholder="example@company.com">
+                </div>
+                <div class="detail-input-group">
+                    <label>專案備註 (選填)</label>
+                    <textarea name="note" class="detail-input" rows="3" placeholder="例如：急件，需要統編..."></textarea>
+                </div>
+
+                <button type="submit" class="b2b-btn-submit">
+                    <i class="fas fa-check-circle"></i> 確認送出
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Standard Image Lightbox -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <button class="close-lightbox" onclick="closeLightbox()">&times;</button>
+        <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+    </div>
+
+    <script src="script.js?v=20260512_V40"></script>
+    <script src="admin.js?v=20260512_V40"></script>
 </body>
+
 </html>
